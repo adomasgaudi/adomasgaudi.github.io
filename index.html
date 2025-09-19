@@ -69,7 +69,7 @@
 </head>
 <body>
     <h1>Bench Press 1RM Calculator</h1>
-    <p style="text-align: center;">Estimate your one-rep max using the Epley formula.</p>
+    <p style="text-align: center;">Estimate your one-rep max using a logistic formula.</p>
     <div class="input-container">
         <label for="weight">Weight:</label>
         <input type="number" id="weight" min="0" step="0.1" value="135">
@@ -107,19 +107,26 @@
 
             // Convert kg to lbs for calculation if needed
             const weightInLbs = unit === 'kg' ? weight * 2.20462 : weight;
-            // Epley formula: 1RM = weight * (1 + reps/30)
-            const oneRM = weightInLbs * (1 + reps / 30);
+
+            // New formula: R(x) = 24.4 / (1 + exp(0.0944x - 6.95))
+            const R = (x) => 24.4 / (1 + Math.exp(0.0944 * x - 6.95));
+            // Calculate 1RM: 1RM = w / R(100/w * x)
+            const adjustedReps = (100 / weightInLbs) * reps;
+            const percentageOf1RM = R(adjustedReps) / 100; // Convert to decimal
+            const oneRM = weightInLbs / percentageOf1RM;
+
             const repRanges = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15];
 
             repRanges.forEach(rep => {
-                const estimatedWeight = oneRM / (1 + rep / 30);
+                const percentage = R(rep) / 100; // Convert to decimal
+                const estimatedWeight = oneRM * percentage;
                 const displayWeight = unit === 'kg' ? (estimatedWeight / 2.20462).toFixed(1) : estimatedWeight.toFixed(1);
-                const percentage = (estimatedWeight / oneRM * 100).toFixed(1);
+                const percentageDisplay = (percentage * 100).toFixed(1);
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${rep}</td>
                     <td>${displayWeight} ${unit}</td>
-                    <td>${percentage}%</td>
+                    <td>${percentageDisplay}%</td>
                 `;
                 tableBody.appendChild(row);
             });
